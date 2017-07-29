@@ -14,6 +14,35 @@ import React, {
 const _module = NativeModules.BaiduGeolocationModule;
 
 export default {
+  // 原生层	stopFlag 默认值为true， 即完成一次定位后关闭客户端
+  stopLocationClient(stopFlag) {
+	return new Promise((resolve, reject) => {
+	  try {
+		_module.stopLocationClient(stopFlag);
+	  }
+	  catch (e) {
+		reject(e);
+		return;
+	  }
+	  DeviceEventEmitter.once('onGetCurrentLocationPosition', resp => {
+		resolve(resp);
+	  });
+	});
+  },
+  setScanSpan(scanSpan) {
+	return new Promise((resolve, reject) => {
+	  try {
+		_module.setScanSpan(scanSpan);
+	  }
+	  catch (e) {
+		reject(e);
+		return;
+	  }
+	  DeviceEventEmitter.once('onGetCurrentLocationPosition', resp => {
+		resolve(resp);
+	  });
+	});
+  },
   geocode(city, addr) {
     return new Promise((resolve, reject) => {
       try {

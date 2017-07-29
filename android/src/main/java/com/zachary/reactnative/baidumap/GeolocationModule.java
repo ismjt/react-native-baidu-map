@@ -17,6 +17,7 @@ import com.baidu.mapapi.search.geocode.ReverseGeoCodeOption;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
 import com.baidu.mapapi.utils.CoordinateConverter;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
@@ -30,10 +31,14 @@ import java.util.List;
  * Created by zachary on 2/9/2016.
  */
 public class GeolocationModule extends BaseModule
-        implements BDLocationListener, OnGetGeoCoderResultListener {
+        implements BDLocationListener, OnGetGeoCoderResultListener, LifecycleEventListener {
 
     private LocationClient locationClient;
     private static GeoCoder geoCoder;
+    // 控制onReceiveLocation方法中locationClient.stop();是否关闭
+    private Boolean stopLocationClient=true;
+    // 设置发起定位请求的间隔时间为2000ms
+    private int gpsScanSpan=2000;
 
     public GeolocationModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -52,6 +57,8 @@ public class GeolocationModule extends BaseModule
         option.setIsNeedAltitude(true);
         option.setIsNeedLocationDescribe(true);
         option.setOpenGps(true); //设置是否打开gps进行定位
+        option.setScanSpan(gpsScanSpan);// 设置发起定位请求的间隔时间为1000ms
+        option.disableCache(true);// 禁止启用缓存定位
         locationClient = new LocationClient(context.getApplicationContext());
         locationClient.setLocOption(option);
         Log.i("locationClient", "locationClient");
@@ -84,6 +91,27 @@ public class GeolocationModule extends BaseModule
 
     }
 
+    /**
+     * 设置发起定位请求的间隔时间，默认2000ms
+     * @param scanSpan 间隔时间
+     */
+    @ReactMethod
+    public void setScanSpan(int scanSpan) {
+        this.gpsScanSpan = scanSpan;
+    }
+
+    /**
+     * 是否在每次完成定位后关闭GPS
+     * @param stopFlag 关闭标识
+     */
+    @ReactMethod
+    public void stopLocationClient(boolean stopFlag) {
+        this.stopLocationClient = stopFlag;
+    }
+
+    /**
+     * 创建并开启GPS定位客户端
+     */
     @ReactMethod
     public void getCurrentPosition() {
         if(locationClient == null) {
@@ -119,6 +147,9 @@ public class GeolocationModule extends BaseModule
         params.putDouble("altitude", bdLocation.getAltitude());
         params.putDouble("radius", bdLocation.getRadius());
         params.putString("address", bdLocation.getAddrStr());
+        params.putDouble("speed", bdLocation.getSpeed());
+        // GPS_ACCURACY_GOOD = 1; GPS_ACCURACY_MID = 2; GPS_ACCURACY_BAD = 3;
+        params.putInt("accuracy", bdLocation.getGpsAccuracyStatus());
         params.putString("countryCode", bdLocation.getCountryCode());
         params.putString("country", bdLocation.getCountry());
         params.putString("province", bdLocation.getProvince());
@@ -131,7 +162,11 @@ public class GeolocationModule extends BaseModule
         params.putString("buildingName", bdLocation.getBuildingName());
         Log.i("onReceiveLocation", "onGetCurrentLocationPosition");
         sendEvent("onGetCurrentLocationPosition", params);
-        locationClient.stop();
+        // locationClient.stop();
+        // 默认是不使用实时定位的
+        if(stopLocationClient) {
+            locationClient.stop();
+        }
     }
 
     @Override
@@ -193,4 +228,29 @@ public class GeolocationModule extends BaseModule
         }
         sendEvent("onGetReverseGeoCodeResult", params);
     }
+
+    @Override
+    public void onHostResume() {
+        // Activity `onResume`
+        if (locationClient != null) {
+            locationClient.start();
+        }
+    }
+
+    @Override
+    public void onHostPause() {
+        // Activity `onPause`
+        if (locationClient != null) {
+            locationClient.stop();
+        }
+    }
+
+    @Override
+    public void onHostDestroy() {
+        // Activity `onDestroy`
+        if (locationClient != null) {
+            locationClient.stop();
+        }
+    }
+
 }
