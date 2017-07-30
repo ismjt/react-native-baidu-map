@@ -39,6 +39,10 @@ public class GeolocationModule extends BaseModule
     private Boolean stopLocationClient=true;
     // 设置发起定位请求的间隔时间为2000ms
     private int gpsScanSpan=2000;
+    // 是否返回详细的百度定位数据
+    private boolean simpleDataType=false;
+    // 返回的经纬度坐标系类型，默认百度 bd09ll
+    private String coorType = "bd09ll";
 
     public GeolocationModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -52,7 +56,7 @@ public class GeolocationModule extends BaseModule
 
     private void initLocationClient() {
         LocationClientOption option = new LocationClientOption();
-        option.setCoorType("bd09ll"); //返回百度经纬度坐标系
+        option.setCoorType(coorType); //返回百度经纬度坐标系
         option.setIsNeedAddress(true);
         option.setIsNeedAltitude(true);
         option.setIsNeedLocationDescribe(true);
@@ -98,6 +102,24 @@ public class GeolocationModule extends BaseModule
     @ReactMethod
     public void setScanSpan(int scanSpan) {
         this.gpsScanSpan = scanSpan;
+    }
+
+    /**
+     * 设置是否返回详细的百度定位数据
+     * @param simple 开启开关，默认返回简单的定位数据
+     */
+    @ReactMethod
+    public void setSimpleDataType(boolean simple) {
+        this.simpleDataType = simple;
+    }
+
+    /**
+     * 设置返回的经纬度坐标系类型
+     * @param type 定位类型
+     */
+    @ReactMethod
+    public void setCoorType(String type) {
+        this.coorType = type;
     }
 
     /**
@@ -150,16 +172,18 @@ public class GeolocationModule extends BaseModule
         params.putDouble("speed", bdLocation.getSpeed());
         // GPS_ACCURACY_GOOD = 1; GPS_ACCURACY_MID = 2; GPS_ACCURACY_BAD = 3;
         params.putInt("accuracy", bdLocation.getGpsAccuracyStatus());
-        params.putString("countryCode", bdLocation.getCountryCode());
-        params.putString("country", bdLocation.getCountry());
-        params.putString("province", bdLocation.getProvince());
-        params.putString("cityCode", bdLocation.getCityCode());
-        params.putString("city", bdLocation.getCity());
-        params.putString("district", bdLocation.getDistrict());
-        params.putString("street", bdLocation.getStreet());
-        params.putString("streetNumber", bdLocation.getStreetNumber());
-        params.putString("buildingId", bdLocation.getBuildingID());
-        params.putString("buildingName", bdLocation.getBuildingName());
+        if(simpleDataType){
+            params.putString("countryCode", bdLocation.getCountryCode());
+            params.putString("country", bdLocation.getCountry());
+            params.putString("province", bdLocation.getProvince());
+            params.putString("cityCode", bdLocation.getCityCode());
+            params.putString("city", bdLocation.getCity());
+            params.putString("district", bdLocation.getDistrict());
+            params.putString("street", bdLocation.getStreet());
+            params.putString("streetNumber", bdLocation.getStreetNumber());
+            params.putString("buildingId", bdLocation.getBuildingID());
+            params.putString("buildingName", bdLocation.getBuildingName());
+        }
         Log.i("onReceiveLocation", "onGetCurrentLocationPosition");
         sendEvent("onGetCurrentLocationPosition", params);
         // locationClient.stop();

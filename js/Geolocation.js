@@ -29,10 +29,41 @@ export default {
 	  });
 	});
   },
+  // 设置定位请求的时间间隔
   setScanSpan(scanSpan) {
 	return new Promise((resolve, reject) => {
 	  try {
 		_module.setScanSpan(scanSpan);
+	  }
+	  catch (e) {
+		reject(e);
+		return;
+	  }
+	  DeviceEventEmitter.once('onGetCurrentLocationPosition', resp => {
+		resolve(resp);
+	  });
+	});
+  },
+  // 设置定位数据的返回类型，simple为布尔型参数，原生层默认为false，表示返回简单的百度定位数据
+  setSimpleDataType(simple) {
+	return new Promise((resolve, reject) => {
+	  try {
+		_module.setSimpleDataType(simple);
+	  }
+	  catch (e) {
+		reject(e);
+		return;
+	  }
+	  DeviceEventEmitter.once('onGetCurrentLocationPosition', resp => {
+		resolve(resp);
+	  });
+	});
+  },
+  // 设置返回的经纬度坐标系类型，默认为bd09ll百度坐标，type为枚举型字符串参数，可传入的值有wgs84、gcj02、bd09ll
+  setCoorType(type) {
+	return new Promise((resolve, reject) => {
+	  try {
+		_module.setCoorType(type);
 	  }
 	  catch (e) {
 		reject(e);
